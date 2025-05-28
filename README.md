@@ -1,4 +1,4 @@
-# 🧠 What is DBMS?
+ # 🧠 What is DBMS?
 
 **DBMS (Database Management System)** is a software tool that helps in creating, managing, and interacting with databases efficiently. It provides a structured and secure way to store, retrieve, and update data.
 
