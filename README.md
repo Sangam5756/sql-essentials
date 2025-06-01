@@ -1331,3 +1331,110 @@ OFFSET number_to_skip;
 | **IN**           | Filter results based on a list of values  | `SELECT * FROM employees WHERE department IN ('Sales', 'HR');`                        |
 | **LIKE**         | Pattern matching for strings              | `SELECT * FROM employees WHERE name LIKE 'A%';`                                       |
 | **IS NULL**      | Check for NULL values                     | `SELECT * FROM employees WHERE department IS NULL;`                                   |
+
+
+
+# 🔹 What is a **Trigger** in SQL?
+
+A **Trigger** is **like an automatic response** to some event happening in a database.
+
+### ✅ Think of it like:
+
+> “If someone **inserts**, **updates**, or **deletes** a row in a table, then do something automatically.”
+
+---
+
+### 🔧 Real-life Example:
+
+> Imagine you have a table called `Employees`, and whenever someone adds a new employee, you want to log that action into another table called `Employee_Log`.
+
+---
+
+### 📦 Table Setup
+
+```sql
+-- Main table
+CREATE TABLE Employees (
+    id INT PRIMARY KEY,
+    name VARCHAR(100),
+    salary DECIMAL
+);
+
+-- Log table
+CREATE TABLE Employee_Log (
+    log_id INT AUTO_INCREMENT PRIMARY KEY,
+    message VARCHAR(255),
+    log_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+---
+
+### 🧠 Trigger Example
+
+```sql
+DELIMITER //
+
+CREATE TRIGGER after_employee_insert
+AFTER INSERT ON Employees
+FOR EACH ROW
+BEGIN
+    INSERT INTO Employee_Log(message)
+    VALUES (CONCAT('New employee added: ', NEW.name));
+END //
+
+DELIMITER ;
+```
+
+#### ✅ What this trigger does:
+
+* It runs **AFTER** a new row is added to `Employees`.
+* It inserts a message in the `Employee_Log` table automatically.
+
+---
+
+## 🔹 What is a **Stored Procedure**?
+
+A **Stored Procedure** is like a **named function** in the database.
+
+> You write some SQL code once and give it a name, and you can call it whenever needed.
+
+---
+
+### 🧠 Simple Example:
+
+```sql
+DELIMITER //
+
+CREATE PROCEDURE AddEmployee(
+    IN empName VARCHAR(100),
+    IN empSalary DECIMAL
+)
+BEGIN
+    INSERT INTO Employees(name, salary)
+    VALUES (empName, empSalary);
+END //
+
+DELIMITER ;
+```
+
+### ✅ To run this procedure:
+
+```sql
+CALL AddEmployee('Sangam', 50000);
+```
+
+#### ✅ What this procedure does:
+
+* You call it with a name and salary.
+* It adds a new row to the `Employees` table.
+
+
+## 🟨 Key Differences
+
+| Feature    | Trigger                         | Stored Procedure            |
+| ---------- | ------------------------------- | --------------------------- |
+| Invoked    | Automatically on table events   | Manually using `CALL`       |
+| Use Case   | Logging, validation, automation | Reuse logic, business rules |
+| Parameters | No (uses NEW/OLD values)        | Yes (accepts input/output)  |
+
