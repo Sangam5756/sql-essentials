@@ -1,3 +1,10 @@
+### 📘 Practice Files
+
+* [SQL Practice 1](./practice/SQL1.md)
+* [SQL Practice 2](./practice/SQL2.md)
+ 
+
+
  # 🧠 What is DBMS?
 
 **DBMS (Database Management System)** is a software tool that helps in creating, managing, and interacting with databases efficiently. It provides a structured and secure way to store, retrieve, and update data.
@@ -1437,4 +1444,177 @@ CALL AddEmployee('Sangam', 50000);
 | Invoked    | Automatically on table events   | Manually using `CALL`       |
 | Use Case   | Logging, validation, automation | Reuse logic, business rules |
 | Parameters | No (uses NEW/OLD values)        | Yes (accepts input/output)  |
+
+
+
+
+# Conflicts in DB
+When multiple **transactions** try to access the **same data** at the same time, we have to manage:
+
+* **Who reads** (`R`) the data
+* **Who writes** (`W`) the data
+
+These actions can happen in different combinations, leading to different problems or no problems.
+
+---
+
+## 🔹 1. **WR Conflict** – Write **after** Read
+
+### ➡️ Also called: **Unrepeatable Read**
+
+> One transaction reads the data, then another transaction writes (updates) it.
+
+### 🔧 Example:
+
+* **T1:** `READ(X)` → sees value = 10
+* **T2:** `WRITE(X)` → changes value to 20
+* **T1:** reads X again → now it's 20 ❌ (value changed in between)
+
+➡️ ⚠️ Problem: T1 saw different values in same transaction
+
+---
+
+## 🔹 2. **RW Conflict** – Read **after** Write
+
+### ➡️ Also called: **Dirty Read**
+
+> One transaction writes a value, another transaction reads it **before the first one is committed.**
+
+### 🔧 Example:
+
+* **T1:** `WRITE(X)` → sets X = 500 (but not committed)
+* **T2:** `READ(X)` → sees X = 500
+* **T1:** rolls back (undo write)
+* Now X is not 500 anymore 😬
+
+➡️ ⚠️ Problem: T2 read something that never really happened
+
+---
+
+## 🔹 3. **WW Conflict** – Write **after** Write
+
+### ➡️ Also called: **Lost Update**
+
+> Two transactions write to the same data item without knowing about each other.
+
+### 🔧 Example:
+
+* **T1:** `WRITE(X = 100)`
+* **T2:** `WRITE(X = 200)` (overwrites T1)
+* **Only T2’s write is saved**, T1’s update is **lost** ❌
+
+➡️ ⚠️ Problem: One update disappears
+
+---
+
+## 🧩 Summary Table
+
+| Conflict Type | Meaning           | Problem Name      | What happens?                            |
+| ------------- | ----------------- | ----------------- | ---------------------------------------- |
+| WR            | Write after Read  | Unrepeatable Read | First reads value, then it changes       |
+| RW            | Read after Write  | Dirty Read        | Reads a value that might get rolled back |
+| WW            | Write after Write | Lost Update       | One write overwrites another             |
+
+# How atomicity is ensured
+
+## 🔹 Why Use Logging?
+
+> Logging is like **keeping a backup notebook** of what your database is doing.
+
+When a transaction runs:
+
+* We write the operations to a **log file first**
+* Only then do we apply changes to the **actual database**
+
+If a failure happens (like power cut 💡⚡️), the database uses the log to **recover or rollback** safely.
+
+---
+
+## 🔹 1. **Standard Logging (Write-Ahead Logging – WAL)**
+
+### ✅ Key Idea:
+
+> First write to a log file, then update the database.
+
+---
+
+### 🧠 Real-world analogy:
+
+Imagine you're filling a form. You first **write all answers in pencil** on rough paper (log), and only after double-checking, you fill them on the final form (DB).
+
+---
+
+### 🔧 How It Works:
+
+1. Transaction begins
+2. Writes its changes to **log file**
+3. Once logged, changes are applied to the database
+4. If crash happens, logs are replayed to **recover** or **undo**
+
+---
+
+### 🔁 What is Stored in the Log?
+
+* Transaction ID
+* Operation type (insert, update, delete)
+* Old value (for undo)
+* New value (for redo)
+
+---
+
+### ✅ Ensures Atomicity because:
+
+* If a crash happens, we can look at the log and **redo** or **undo** changes correctly.
+
+---
+
+## 🔹 2. **Shadow Logging (Shadow Paging)**
+
+### ✅ Key Idea:
+
+> Keep a **shadow copy** (backup) of the database page.
+> If everything goes well, swap the shadow with the actual data.
+
+---
+
+### 🧠 Real-world analogy:
+
+You're editing a Word document, but instead of changing the real file, you copy it and work on the copy. Only when you're happy with changes, you replace the original.
+
+---
+
+### 🔧 How It Works:
+
+1. Before making changes, copy the original page (called **shadow page**)
+2. Perform changes on a **new page (updated copy)**
+3. When transaction commits, update the **page table pointer**
+4. The old version (shadow) is kept aside in case something fails
+
+---
+
+### ✅ Ensures Atomicity because:
+
+* If a crash happens, the pointer still points to the original page — so no corrupt data
+* We either switch completely to new or stick with old — never half-updated
+
+---
+
+## 📊 Difference Table
+
+| Feature          | **Write-Ahead Logging**            | **Shadow Paging (Logging)**            |
+| ---------------- | ---------------------------------- | -------------------------------------- |
+| Log Required?    | Yes (UNDO & REDO logs)             | No actual log, uses shadow copies      |
+| Performance      | Slower (log I/O + DB I/O)          | Faster for read-heavy, slow for writes |
+| Rollback support | Yes (via logs)                     | No direct rollback (uses pointer swap) |
+| Storage Use      | Less                               | More (duplicate pages)                 |
+| Used In          | Most modern DBMS (MySQL, Postgres) | Some older or embedded systems         |
+
+---
+
+## ✅ Summary:
+
+| Method           | Ensures Atomicity? | How?                                   |
+| ---------------- | ------------------ | -------------------------------------- |
+| Standard Logging | ✅ Yes              | Logs before applying, allows undo/redo |
+| Shadow Paging    | ✅ Yes              | Uses backup pages; commit via pointer  |
 
